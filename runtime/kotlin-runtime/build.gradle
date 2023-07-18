@@ -1,0 +1,10 @@
+dependencies {
+    implementation(project(":runtime"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation "io.arrow-kt:arrow-core:${rootProject.properties["arrow_version"]}"
+    implementation "io.insert-koin:koin-core:${koin_version}"
+}
+
+jar {
+    dependsOn(shadowJar)
+}

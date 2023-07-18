@@ -1,0 +1,9 @@
+dependencies {
+    implementation(project(":common-impl"))
+    implementation(project(":event-impl"))
+    implementation(project(":packetbridge-impl"))
+}
+
+jar {
+    dependsOn(shadowJar)
+}

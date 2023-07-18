@@ -1,0 +1,6 @@
+dependencies {
+    compileOnly group: 'io.github.classgraph', name: 'classgraph', version: '4.8.160'
+    compileOnly "org.jetbrains.kotlin:kotlin-reflect:${rootProject.properties["kotlin_reflect_version"]}"
+
+    implementation(project(":event-api"))
+}

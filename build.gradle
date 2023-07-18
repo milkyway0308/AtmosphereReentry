@@ -1,0 +1,78 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
+    id 'org.jetbrains.kotlin.jvm' version '1.8.21' apply false
+}
+
+// =========================================================
+//                Dependency / Repositories
+// =========================================================
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    subprojects.forEach {
+        println it.name
+        implementation(project(it.name))
+    }
+}
+
+// =========================================================
+//                        Tasks
+// =========================================================
+
+build {
+    enabled = false
+}
+
+// =========================================================
+//                Subproject Predefines
+// =========================================================
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+
+    repositories {
+        mavenCentral()
+    }
+
+    jar {
+        archiveBaseName.set("AtmosphereReentry-${capitalizeString(project.name)}")
+    }
+
+    dependencies {
+        compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        compileOnly "io.arrow-kt:arrow-core:${rootProject.properties["arrow_version"]}"
+        compileOnly "io.insert-koin:koin-core:${koin_version}"
+
+        api "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        api "io.arrow-kt:arrow-core:${rootProject.properties["arrow_version"]}"
+        api "io.insert-koin:koin-core:${koin_version}"
+
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0-M1'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.10.0-M1'
+        testImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+        testImplementation "io.arrow-kt:arrow-core:${rootProject.properties["arrow_version"]}"
+        testImplementation "io.insert-koin:koin-core:${koin_version}"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+private String capitalizeString(String origin) {
+    StringBuilder sb = new StringBuilder(origin);
+    sb.setCharAt(0, sb.charAt(0).toUpperCase());
+    int current = sb.indexOf('-')
+    while (current != -1) {
+        sb.setCharAt(current + 1, sb.charAt(current + 1).toUpperCase());
+        current = sb.indexOf('-', current + 1)
+    }
+    return sb.toString()
+}

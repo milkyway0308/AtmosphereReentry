@@ -1,0 +1,7 @@
+dependencies {
+    api (project(":netsync-api"))
+    api (project(":packetbridge-api"))
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:${rootProject.properties["kotlin_reflect_version"]}"
+    implementation group: 'io.github.classgraph', name: 'classgraph', version: '4.8.160'
+}

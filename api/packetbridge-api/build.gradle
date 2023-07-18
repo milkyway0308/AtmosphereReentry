@@ -1,0 +1,8 @@
+dependencies {
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation("io.netty:netty-all:4.1.92.Final")
+    api ("io.netty:netty-all:4.1.92.Final")
+    api (project(":common-api"))
+    api (project(":event-api"))
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.8.10"
+}
