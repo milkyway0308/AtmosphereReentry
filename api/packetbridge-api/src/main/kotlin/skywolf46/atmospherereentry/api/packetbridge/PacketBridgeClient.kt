@@ -1,9 +1,24 @@
 package skywolf46.atmospherereentry.api.packetbridge
 
+import org.koin.core.parameter.parametersOf
+import org.koin.mp.KoinPlatform
+import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import java.util.concurrent.Future
 import kotlin.reflect.KClass
 
 interface PacketBridgeClient : PacketListenable, PacketBridgeClientConnection {
+
+    companion object {
+        fun createInstance(
+            host: String,
+            port: Int,
+            identifyKey: String,
+            listenerType: ListenerType = ListenerType.Reflective.asClient(),
+        ): PacketBridgeClient {
+            return KoinPlatform.getKoin()
+                .get<PacketBridgeClient>(parameters = { parametersOf(host, port, identifyKey, listenerType) })
+        }
+    }
 
     fun <T : PacketBase> waitReply(
         packetBase: PacketBase,

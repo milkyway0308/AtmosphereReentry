@@ -6,7 +6,7 @@ import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerialize
 import java.util.*
 
 @NetworkSerializer
-class UUIDSerializer : DataSerializerBase<UUID> {
+class UUIDSerializer : DataSerializerBase<UUID>() {
     override fun serialize(buf: ByteBuf, dataBase: UUID) {
         buf.writeLong(dataBase.mostSignificantBits)
         buf.writeLong(dataBase.leastSignificantBits)

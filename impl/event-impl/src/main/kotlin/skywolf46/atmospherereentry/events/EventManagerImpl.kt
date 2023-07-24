@@ -7,9 +7,9 @@ import arrow.core.right
 import io.github.classgraph.ClassInfoList
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import skywolf46.atmospherereentry.common.UnregisterTrigger
-import skywolf46.atmospherereentry.common.annotations.Reflective
-import skywolf46.atmospherereentry.common.util.printError
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.annotations.Reflective
+import skywolf46.atmospherereentry.common.api.util.printError
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.events.api.EventReflectionFilter
 import kotlin.reflect.KClass
@@ -90,7 +90,7 @@ class EventManagerImpl : EventManager, KoinComponent {
                                         this@EventManagerImpl,
                                         method.parameters[0].type.kotlin.java as Class<Any>,
                                         method
-                                    ){
+                                    ) {
                                         method.invoke(instance, it)
                                     }
                                 } else {
@@ -99,7 +99,8 @@ class EventManagerImpl : EventManager, KoinComponent {
                                     }
                                 }
                             }.onFailure {
-                                printError("Failed to register event listener for ${classInfo.name}#${method.name}")
+                                printError("Failed to register event listener for ${classInfo.name}#${method.name} : ${it.javaClass.name} (${it.message})")
+                                it.printStackTrace()
                             }
                         }
                 }
@@ -113,7 +114,7 @@ class EventManagerImpl : EventManager, KoinComponent {
             isAccessible = true
             runCatching {
                 newInstance()
-            }.onFailure {
+            }.getOrElse {
                 return it.left()
             }
         }?.right() ?: NoSuchMethodException("No empty constructor found for ${cls.name}").left()

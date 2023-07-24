@@ -1,7 +1,7 @@
 package skywolf46.atmospherereentry.events
 
 import org.koin.core.component.KoinComponent
-import skywolf46.atmospherereentry.common.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 
 class EventStorage : KoinComponent {
     private val interceptors = sortedMapOf<Int, MutableList<(Any) -> Boolean>>(

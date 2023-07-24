@@ -6,7 +6,7 @@ import org.koin.core.component.get
 import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClient
 import skywolf46.atmospherereentry.api.packetbridge.addListener
 import skywolf46.atmospherereentry.api.packetbridge.data.DoubleHashedType
-import skywolf46.atmospherereentry.common.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.netsync.packets.broadcast.BroadcastVariableSync
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -30,7 +30,7 @@ class NetSyncPacketListenerRegistry() : KoinComponent {
         type: KClass<*>,
         fieldName: Option<String> = Option.fromNullable(null),
         listener: (Option<T>) -> Unit
-    ) : UnregisterTrigger{
+    ) : UnregisterTrigger {
         return registryGlobalLock.write {
             listeners.getOrPut(DoubleHashedType(type) to fieldName.orNull()) { SynchronizedListenerRegistry() }
                 .addListener(listener as (Option<Any>) -> Unit)

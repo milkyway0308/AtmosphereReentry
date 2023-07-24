@@ -6,7 +6,7 @@ import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerialize
 import skywolf46.atmospherereentry.api.packetbridge.data.DoubleHashedType
 
 @NetworkSerializer
-class DoubleHashSerializer : DataSerializerBase<DoubleHashedType>{
+class DoubleHashSerializer : DataSerializerBase<DoubleHashedType>(){
     override fun serialize(buf: ByteBuf, dataBase: DoubleHashedType) {
         buf.writeInt(dataBase.hash.first)
         buf.writeInt(dataBase.hash.second)

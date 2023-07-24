@@ -8,12 +8,12 @@ import org.koin.core.component.get
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-import skywolf46.atmospherereentry.common.annotations.ClassLoaderWorker
-import skywolf46.atmospherereentry.common.annotations.EntryPoinWorker
-import skywolf46.atmospherereentry.common.annotations.EntryPointContainer
+import skywolf46.atmospherereentry.common.api.annotations.ClassLoaderWorker
+import skywolf46.atmospherereentry.common.api.annotations.EntryPointWorker
+import skywolf46.atmospherereentry.common.api.annotations.EntryPointContainer
 import skywolf46.atmospherereentry.common.util.StopWatch
-import skywolf46.atmospherereentry.common.util.printError
-import skywolf46.atmospherereentry.common.util.waitStackTrace
+import skywolf46.atmospherereentry.common.api.util.printError
+import skywolf46.atmospherereentry.common.api.util.waitStackTrace
 import java.util.concurrent.atomic.AtomicBoolean
 
 @EntryPointContainer
@@ -34,6 +34,7 @@ object Core : KoinComponent {
     }
 
     @Synchronized
+    @JvmStatic
     fun initialize() {
         if (isStarted.get())
             return
@@ -215,7 +216,7 @@ object Core : KoinComponent {
     private fun awakeAll() {
         settingInstances.values.forEach {
             for (method in it.javaClass.declaredMethods) {
-                if (method.getAnnotation(EntryPoinWorker::class.java) != null) {
+                if (method.getAnnotation(EntryPointWorker::class.java) != null) {
                     if (method.parameterCount != 0) {
                         printError("..EntryPointFunction ${it.javaClass.name}#${method.name} requires no parameter, but has ${method.parameterCount} parameters. Skipping...")
                         continue

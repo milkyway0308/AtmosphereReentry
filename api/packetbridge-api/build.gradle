@@ -1,8 +1,38 @@
 dependencies {
+    api 'io.jsonwebtoken:jjwt-api:0.11.5'
     // https://mvnrepository.com/artifact/io.netty/netty-all
     implementation("io.netty:netty-all:4.1.92.Final")
     api ("io.netty:netty-all:4.1.92.Final")
     api (project(":common-api"))
     api (project(":event-api"))
+    compileOnly 'io.jsonwebtoken:jjwt-api:0.11.5'
+
+
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.8.10"
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "Snapshot"
+            allowInsecureProtocol(true)
+            if (rootProject.properties.get("snapshot").toString() == "true") {
+                url(rootProject.properties["reposilite.snapshot"] ?: "https://YOUR_REPOSIITE_URL/")
+            } else {
+                url(rootProject.properties["reposilite.release"] ?: "https://YOUR_REPOSIITE_URL/")
+            }
+            credentials {
+                username(rootProject.properties['reposilite.user'] as String ?: "YOUR_REPOSITORY_USERNAME")
+                password(rootProject.properties['reposilite.token'] as String ?: "YOUR_REPOSITORY_PASSWORD")
+            }
+        }
+    }
+    publications {
+        register("jar${project.name}", MavenPublication) {
+            groupId 'skywolf46'
+            artifactId "atmosphere-reentry-${project.name}"
+            version(rootProject.properties.get("snapshot").toString() == "true" ? "${rootProject.properties['version']}-SNAPSHOT" : rootProject.properties['version'] as String)
+            from components.java
+        }
+    }
 }

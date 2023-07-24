@@ -8,15 +8,17 @@ import org.koin.core.context.loadKoinModules
 import org.koin.dsl.module
 import skywolf46.atmospherereentry.api.packetbridge.DataSerializerBase
 import skywolf46.atmospherereentry.api.packetbridge.DataSerializerRegistry
+import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClient
+import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeHost
 import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerializer
 import skywolf46.atmospherereentry.api.packetbridge.annotations.ReflectedSerializer
 import skywolf46.atmospherereentry.api.packetbridge.util.readString
 import skywolf46.atmospherereentry.api.packetbridge.util.writeString
-import skywolf46.atmospherereentry.common.annotations.EntryPoinWorker
-import skywolf46.atmospherereentry.common.annotations.EntryPointContainer
+import skywolf46.atmospherereentry.common.api.annotations.EntryPointContainer
+import skywolf46.atmospherereentry.common.api.annotations.EntryPointWorker
 import skywolf46.atmospherereentry.packetbridge.serializers.AutoReflectedSerializer
 import skywolf46.atmospherereentry.packetbridge.serializers.SerializerRegistryImpl
-import skywolf46.atmospherereentry.packetbridge.util.JWTUtil
+import skywolf46.atmospherereentry.api.packetbridge.util.JWTUtil
 import skywolf46.atmospherereentry.packetbridge.util.log
 import skywolf46.atmospherereentry.packetbridge.util.logError
 import kotlin.reflect.KClass
@@ -27,7 +29,7 @@ class PacketBridgeEntryPoint : KoinComponent {
         it.bufferedReader().readLine()
     } ?: "Unknown"
 
-    @EntryPoinWorker
+    @EntryPointWorker
     fun onPacketBridgeLoad() {
         val loadStartTime = System.currentTimeMillis()
         log("..PacketBridge version $version")
@@ -45,13 +47,15 @@ class PacketBridgeEntryPoint : KoinComponent {
         loadKoinModules(module {
             single<DataSerializerRegistry> { SerializerRegistryImpl() }
             factory { AutoReflectedSerializer<Any>(it[0], it[1]) }
+            factory<PacketBridgeClient> { PacketBridgeClientImpl(it[0], it[1], it[2], it[3]) }
+            factory<PacketBridgeHost> { PacketBridgeServerImpl(it[0], it[1], it[2]) }
         })
         JWTUtil.initializeKey()
     }
 
     private fun registerDefaultSerializers() {
         get<DataSerializerRegistry>().apply {
-            registerSerializer(String::class.java, object : DataSerializerBase<String> {
+            registerSerializer(String::class.java, object : DataSerializerBase<String>() {
                 override fun serialize(buf: ByteBuf, dataBase: String) {
                     buf.writeString(dataBase)
                 }
@@ -60,7 +64,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readString()
                 }
             })
-            registerSerializer(Int::class.java, object : DataSerializerBase<Int> {
+            registerSerializer(Int::class.java, object : DataSerializerBase<Int>() {
                 override fun serialize(buf: ByteBuf, dataBase: Int) {
                     buf.writeInt(dataBase)
                 }
@@ -69,7 +73,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readInt()
                 }
             })
-            registerSerializer(Long::class.java, object : DataSerializerBase<Long> {
+            registerSerializer(Long::class.java, object : DataSerializerBase<Long>() {
                 override fun serialize(buf: ByteBuf, dataBase: Long) {
                     buf.writeLong(dataBase)
                 }
@@ -78,7 +82,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readLong()
                 }
             })
-            registerSerializer(Short::class.java, object : DataSerializerBase<Short> {
+            registerSerializer(Short::class.java, object : DataSerializerBase<Short>() {
                 override fun serialize(buf: ByteBuf, dataBase: Short) {
                     buf.writeShort(dataBase.toInt())
                 }
@@ -87,7 +91,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readShort()
                 }
             })
-            registerSerializer(Byte::class.java, object : DataSerializerBase<Byte> {
+            registerSerializer(Byte::class.java, object : DataSerializerBase<Byte>() {
                 override fun serialize(buf: ByteBuf, dataBase: Byte) {
                     buf.writeByte(dataBase.toInt())
                 }
@@ -96,7 +100,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readByte()
                 }
             })
-            registerSerializer(Float::class.java, object : DataSerializerBase<Float> {
+            registerSerializer(Float::class.java, object : DataSerializerBase<Float>() {
                 override fun serialize(buf: ByteBuf, dataBase: Float) {
                     buf.writeFloat(dataBase)
                 }
@@ -105,7 +109,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readFloat()
                 }
             })
-            registerSerializer(Double::class.java, object : DataSerializerBase<Double> {
+            registerSerializer(Double::class.java, object : DataSerializerBase<Double>() {
                 override fun serialize(buf: ByteBuf, dataBase: Double) {
                     buf.writeDouble(dataBase)
                 }
@@ -114,7 +118,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readDouble()
                 }
             })
-            registerSerializer(Boolean::class.java, object : DataSerializerBase<Boolean> {
+            registerSerializer(Boolean::class.java, object : DataSerializerBase<Boolean>() {
                 override fun serialize(buf: ByteBuf, dataBase: Boolean) {
                     buf.writeBoolean(dataBase)
                 }
@@ -123,7 +127,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readBoolean()
                 }
             })
-            registerSerializer(ByteArray::class.java, object : DataSerializerBase<ByteArray> {
+            registerSerializer(ByteArray::class.java, object : DataSerializerBase<ByteArray>() {
                 override fun serialize(buf: ByteBuf, dataBase: ByteArray) {
                     buf.writeInt(dataBase.size)
                     buf.writeBytes(dataBase)
@@ -136,7 +140,7 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return arr
                 }
             })
-            registerSerializer(IntArray::class.java, object : DataSerializerBase<IntArray> {
+            registerSerializer(IntArray::class.java, object : DataSerializerBase<IntArray>() {
                 override fun serialize(buf: ByteBuf, dataBase: IntArray) {
                     buf.writeInt(dataBase.size)
                     dataBase.forEach {

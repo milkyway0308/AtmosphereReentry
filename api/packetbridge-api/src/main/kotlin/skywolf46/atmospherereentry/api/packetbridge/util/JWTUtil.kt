@@ -1,4 +1,4 @@
-package skywolf46.atmospherereentry.packetbridge.util
+package skywolf46.atmospherereentry.api.packetbridge.util
 
 import arrow.core.Either
 import io.jsonwebtoken.JwtParser

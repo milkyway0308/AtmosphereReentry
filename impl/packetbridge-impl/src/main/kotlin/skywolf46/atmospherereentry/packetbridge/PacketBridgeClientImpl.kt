@@ -20,14 +20,12 @@ import org.koin.core.component.get
 import skywolf46.atmospherereentry.api.packetbridge.*
 import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import skywolf46.atmospherereentry.api.packetbridge.data.PacketWrapper
-import skywolf46.atmospherereentry.common.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.packetbridge.data.ReplyMetadata
 import skywolf46.atmospherereentry.packetbridge.handler.*
-import skywolf46.atmospherereentry.packetbridge.packets.WrappedPacket
+import skywolf46.atmospherereentry.api.packetbridge.packets.WrappedPacket
 import skywolf46.atmospherereentry.packetbridge.packets.client.PacketRequestIdentify
-import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyComplete
-import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyDenied
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketRequireIdentify
 import skywolf46.atmospherereentry.packetbridge.util.TriggerableFuture
 import java.util.*
@@ -94,6 +92,7 @@ class PacketBridgeClientImpl(
             })
         }
         init()
+        listenerType.onRegister(this)
 
         channel = bootstrap.connect(host, port).sync().channel()
     }
@@ -178,9 +177,9 @@ class PacketBridgeClientImpl(
         if (packetBase is PacketWrapper<*>) {
             // Wave 1 - Trigger with wrapped packet
             eventManager.callEvent(packetBase.apply {
-                updateReplier { packetWrapper, packetBase ->
+                updateReplier { packetWrapper, packetToReply ->
                     // TODO - Add packet send verifier
-                    send(PacketWrapper(packetBase, getIdentify(), packetWrapper.packetId))
+                    send(PacketWrapper(packetToReply, getIdentify(), packetWrapper.packetId))
                 }
             }, packetBase.packet.javaClass.name)
             // Wave 2 - Trigger original packet
@@ -191,8 +190,6 @@ class PacketBridgeClientImpl(
     }
 
     internal fun identify(serverId: String) {
-        this.eventManager.clear()
-        listenerType.onRegister(this)
         println("PacketBridgeClientImpl - Identified as $serverId")
     }
 }

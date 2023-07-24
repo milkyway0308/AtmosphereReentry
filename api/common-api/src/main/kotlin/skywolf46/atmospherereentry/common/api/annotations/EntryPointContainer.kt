@@ -1,4 +1,4 @@
-package skywolf46.atmospherereentry.common.annotations
+package skywolf46.atmospherereentry.common.api.annotations
 
 import kotlin.reflect.KClass
 

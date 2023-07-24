@@ -1,9 +1,11 @@
 package skywolf46.atmospherereentry.api.packetbridge.data
 
+import skywolf46.atmospherereentry.api.packetbridge.PacketBase
 import skywolf46.atmospherereentry.api.packetbridge.PacketListenable
 import skywolf46.atmospherereentry.api.packetbridge.annotations.PacketListener
 import skywolf46.atmospherereentry.api.packetbridge.annotations.ServerPacketListener
 import skywolf46.atmospherereentry.events.api.EventReflectionFilter
+import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
 
 sealed interface ListenerType {
@@ -30,18 +32,18 @@ sealed interface ListenerType {
             }
         }
 
-        @OptIn(skywolf46.atmospherereentry.common.annotations.Reflective::class)
+        @OptIn(skywolf46.atmospherereentry.common.api.annotations.Reflective::class)
         override fun onRegister(listenable: PacketListenable) {
             listenable.getPacketListener().scanAndRegisterWithFilter(
                 classAnnotation,
                 functionAnnotation,
                 priorityProvider,
                 EventReflectionFilter(PacketWrapper::class.java) { cls, field, invoker ->
-                    val targetClass =
-                        cls.kotlin.supertypes.find { it.classifier is KClass<*> && it.classifier == PacketWrapper::class }!!.arguments[0].type!!.classifier!! as KClass<*>
+                    val type = field.parameters[0].parameterizedType as ParameterizedType
+                    val targetClass = type.actualTypeArguments[0] as Class<*>
                     registerObserverWithKey<PacketWrapper<*>>(
                         PacketWrapper::class,
-                        targetClass.qualifiedName!!,
+                        targetClass.name,
                         priorityProvider(field.getAnnotation(functionAnnotation))
                     ) {
                         invoker(it)

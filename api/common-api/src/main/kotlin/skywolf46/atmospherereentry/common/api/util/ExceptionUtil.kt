@@ -1,4 +1,4 @@
-package skywolf46.atmospherereentry.common.util
+package skywolf46.atmospherereentry.common.api.util
 
 fun Throwable.waitStackTrace(){
     printStackTrace()

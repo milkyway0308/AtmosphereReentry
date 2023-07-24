@@ -33,7 +33,7 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
         private val target: Class<T>,
         private val constructedClass: List<Class<*>>,
         private val type: ReflectType
-    ) : DataSerializerBase<T> {
+    ) : DataSerializerBase<T>() {
         private val serializers = mutableListOf<DataSerializerBase<Any>>()
         private val preCalculatedHash: Int
         private val targetConstructor: Constructor<out Any>
@@ -75,9 +75,9 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
         }
 
         private fun constructSerializer(type: ReflectType) {
-            if (constructedClass.contains(javaClass)) {
-                throw IllegalStateException("Circular dependency detected")
-            }
+//            if (constructedClass.contains(javaClass)) {
+//                throw IllegalStateException("Circular dependency detected")
+//            }
             val registry = get<DataSerializerRegistry>()
             when (type) {
                 ReflectType.CONSTRUCTOR_INJECTION -> {
@@ -117,7 +117,7 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
 
         override fun serialize(buf: ByteBuf, dataBase: T) {
             buf.writeByte(type.ordinal)
-            buf.writeInt(hashCode())
+            buf.writeInt(preCalculatedHash)
             dataBase.javaClass.declaredFields.forEachIndexed { i, it ->
                 it.isAccessible = true
                 DoubleHashedType(it.name).serializeTo(buf)
@@ -137,7 +137,7 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
                         ReflectType.values()[buf.readByte().toInt()].name
                     })"
                 )
-            if (buf.readInt() != hashCode())
+            if (buf.readInt() != preCalculatedHash)
                 throw IllegalArgumentException("Packet checksum failed for ${target.name}; Packet order mismatch")
             val constructedMap = mutableMapOf<DoubleHashedType, Any?>()
             target.declaredFields.forEachIndexed { i, _ ->
@@ -157,11 +157,15 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
 
         private fun performConstructorInjection(map: Map<DoubleHashedType, Any?>): T {
             // Dynamic constructor injection
-            val parameters = targetConstructor.kotlinFunction!!.parameters.map { map[DoubleHashedType(it.name!!)] }.toTypedArray()
+            val parameters =
+                targetConstructor.kotlinFunction!!.parameters.map { map[DoubleHashedType(it.name!!)] }.toTypedArray()
             return targetConstructor.newInstance(*parameters) as T
         }
 
-        private fun performFieldInjection(instance: Any = targetConstructor.newInstance(), map: Map<DoubleHashedType, Any?>): T {
+        private fun performFieldInjection(
+            instance: Any = targetConstructor.newInstance(),
+            map: Map<DoubleHashedType, Any?>
+        ): T {
             map.forEach { (key, value) ->
                 fieldMap[key]?.apply {
                     isAccessible = true
@@ -190,7 +194,7 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
         }
 
         fun calculateHashCode(): Int {
-            var result = target.hashCode()
+            var result = target.name.hashCode()
             result = 31 * result + serializers.hashCode()
             return result
         }

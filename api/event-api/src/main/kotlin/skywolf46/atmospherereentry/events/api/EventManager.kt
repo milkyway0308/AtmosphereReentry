@@ -1,7 +1,7 @@
 package skywolf46.atmospherereentry.events.api
 
-import skywolf46.atmospherereentry.common.UnregisterTrigger
-import skywolf46.atmospherereentry.common.annotations.Reflective
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.annotations.Reflective
 import kotlin.reflect.KClass
 
 interface EventManager {

@@ -1,4 +1,4 @@
-package skywolf46.atmospherereentry.common.util
+package skywolf46.atmospherereentry.common.api.util
 
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get

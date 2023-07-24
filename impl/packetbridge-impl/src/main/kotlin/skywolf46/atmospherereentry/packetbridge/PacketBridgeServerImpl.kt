@@ -16,7 +16,7 @@ import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClientConnection
 import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeHost
 import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import skywolf46.atmospherereentry.api.packetbridge.data.PacketWrapper
-import skywolf46.atmospherereentry.common.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.packetbridge.handler.ErrorHandler
 import skywolf46.atmospherereentry.packetbridge.handler.PacketDecoder
@@ -26,12 +26,15 @@ import skywolf46.atmospherereentry.packetbridge.packets.client.PacketRequestIden
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyComplete
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyDenied
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketRequireIdentify
-import skywolf46.atmospherereentry.packetbridge.util.JWTUtil
+import skywolf46.atmospherereentry.api.packetbridge.util.JWTUtil
 import skywolf46.atmospherereentry.packetbridge.util.log
 import java.util.*
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.write
 
 class PacketBridgeServerImpl(
     private val port: Int,
+    private val skipVerification: Boolean,
     private val listenerType: ListenerType = ListenerType.Reflective.asServer(),
     val bossGroup: EventLoopGroup = NioEventLoopGroup(),
     val childGroup: EventLoopGroup = NioEventLoopGroup()
@@ -40,6 +43,7 @@ class PacketBridgeServerImpl(
     private val identifiedHandlers = mutableMapOf<String, PacketBridgeProxy>()
     private val eventManager = get<EventManager>().createEventManager()
     private val serverUUID = UUID.randomUUID()
+    private val lock = ReentrantReadWriteLock()
 
     init {
         init()
@@ -48,12 +52,23 @@ class PacketBridgeServerImpl(
 
     private fun init() {
         addWrappedListener(PacketRequestIdentify::class.java, 0) {
-            JWTUtil.checkIdentifier(it.packet.authenticateKey).onLeft { e ->
-                println("Client failed to identify: ${e.message} (UUID ${it.from})")
-                it.reply(PacketIdentifyDenied(e.message!!))
-            }.onRight { key ->
-                println("Client identified as $key (UUID ${it.from})")
-                it.reply(PacketIdentifyComplete(key))
+            if (skipVerification) {
+                lock.write {
+                    identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!
+                }
+                println("Skipping verification. Using authentication key as name instead.")
+                it.reply(PacketIdentifyComplete(it.packet.authenticateKey))
+            } else {
+                JWTUtil.checkIdentifier(it.packet.authenticateKey).onLeft { e ->
+                    println("Client failed to identify: ${e.message} (UUID ${it.from})")
+                    it.reply(PacketIdentifyDenied(e.message!!))
+                }.onRight { key ->
+                    lock.write {
+                        identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!
+                    }
+                    println("Client identified as $key (UUID ${it.from})")
+                    it.reply(PacketIdentifyComplete(key))
+                }
             }
         }
     }
@@ -74,9 +89,11 @@ class PacketBridgeServerImpl(
                         PacketTriggerHandler(this@PacketBridgeServerImpl)
                     )
                     val connection = PacketBridgeProxy(UUID.randomUUID(), ch)
-                    handlers[connection.uuid.apply {
-                        log("New incoming connection detected as $this (${ch.remoteAddress()}), waiting for identification")
-                    }] = connection
+                    lock.write {
+                        handlers[connection.uuid.apply {
+                            log("New incoming connection detected as $this (${ch.remoteAddress()}), waiting for identification")
+                        }] = connection
+                    }
                     connection.send(PacketRequireIdentify(connection.uuid))
                 }
             })
@@ -123,10 +140,10 @@ class PacketBridgeServerImpl(
         if (packetBase is PacketWrapper<*>) {
             // Wave 1 - Trigger with wrapped packet
             eventManager.callEvent(packetBase.apply {
-                updateReplier { packetWrapper, packetBase ->
+                updateReplier { packetWrapper, packetToReply ->
                     // TODO - Add packet send verifier
                     val target = handlers[packetWrapper.from] ?: return@updateReplier
-                    sendTo(target, PacketWrapper(packetBase, serverUUID, packetWrapper.packetId))
+                    sendTo(target, PacketWrapper(packetToReply, serverUUID, packetWrapper.packetId))
                 }
             }, packetBase.packet.javaClass.name)
             // Wave 2 - Trigger original packet

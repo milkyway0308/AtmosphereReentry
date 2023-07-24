@@ -5,6 +5,7 @@ import skywolf46.atmospherereentry.api.packetbridge.DataSerializerBase
 import skywolf46.atmospherereentry.api.packetbridge.annotations.CoreType
 import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerializer
 import skywolf46.atmospherereentry.api.packetbridge.util.HashUtil
+import java.util.*
 import kotlin.reflect.KClass
 
 @CoreType(Short.MIN_VALUE)
@@ -20,6 +21,10 @@ class DoubleHashedType(val hash: Pair<Int, Int>) {
     }
 
     override fun hashCode(): Int {
-        return hash.hashCode()
+        return arrayOf(hash.first, hash.second).contentHashCode()
+    }
+
+    override fun toString(): String {
+        return "DoubleHashedType(hash=${hashCode()})"
     }
 }

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
     id 'org.jetbrains.kotlin.jvm' version '1.8.21' apply false
+    id 'maven-publish'
 }
 
 // =========================================================
@@ -66,7 +67,7 @@ subprojects {
     }
 }
 
-private String capitalizeString(String origin) {
+private static String capitalizeString(String origin) {
     StringBuilder sb = new StringBuilder(origin);
     sb.setCharAt(0, sb.charAt(0).toUpperCase());
     int current = sb.indexOf('-')

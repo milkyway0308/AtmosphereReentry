@@ -14,12 +14,10 @@ class IdentificationHandler(private val client: PacketBridgeClientImpl) :
             if (msg.packet is PacketIdentifyComplete) {
                 ctx.pipeline().remove(this)
                 client.identify((msg.packet as PacketIdentifyComplete).serverId)
-                return
             }
             if (msg.packet is PacketIdentifyDenied) {
                 ctx.pipeline().remove(this)
                 println("Identification denied : ${(msg.packet as PacketIdentifyDenied).cause}")
-                return
             }
         }
         ctx.fireChannelRead(msg)

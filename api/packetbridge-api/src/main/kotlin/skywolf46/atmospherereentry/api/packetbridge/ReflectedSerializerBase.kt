@@ -2,7 +2,7 @@ package skywolf46.atmospherereentry.api.packetbridge
 
 
 abstract class ReflectedSerializerBase<T : Any>(val target: Class<T>, val type: ReflectType) :
-    DataSerializerBase<T> {
+    DataSerializerBase<T>() {
 
     enum class ReflectType {
         /**

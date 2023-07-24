@@ -1,7 +1,6 @@
 package skywolf46.atmospherereentry.api.packetbridge
 
-import skywolf46.atmospherereentry.common.annotations.KotlinOnly
-import skywolf46.atmospherereentry.common.util.create
+import skywolf46.atmospherereentry.common.api.annotations.KotlinOnly
 
 @KotlinOnly
 interface ReflectedSerializingData : PacketBase {

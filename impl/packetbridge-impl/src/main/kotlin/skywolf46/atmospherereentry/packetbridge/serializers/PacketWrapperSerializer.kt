@@ -11,7 +11,7 @@ import skywolf46.atmospherereentry.api.packetbridge.util.serializeTo
 import java.util.*
 
 @NetworkSerializer
-class PacketWrapperSerializer : DataSerializerBase<PacketWrapper<*>>{
+class PacketWrapperSerializer : DataSerializerBase<PacketWrapper<*>>(){
     override fun serialize(buf: ByteBuf, dataBase: PacketWrapper<*>) {
         buf.writeLong(dataBase.packetId)
         buf.writeLong(dataBase.from.mostSignificantBits)

@@ -1,6 +1,6 @@
 package skywolf46.atmospherereentry.api.packetbridge
 
-import skywolf46.atmospherereentry.common.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.events.api.EventManager
 
 interface PacketListenable {
