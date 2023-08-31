@@ -30,6 +30,8 @@ interface PacketBridgeClient : PacketListenable, PacketBridgeClientConnection {
 
     fun <T : PacketBase> waitReplyAsync(packetBase: PacketBase, limitation: KClass<T>): Future<T>
 
+    fun broadcast(vararg packetBase: PacketBase)
+
     fun getInfo(): PacketBridgeClientConnection
 }
 

@@ -1,7 +1,6 @@
-package skywolf46.atmospherereentry.packetbridge.packets
+package skywolf46.atmospherereentry.api.packetbridge.packets.client
 
 import io.netty.buffer.ByteBufAllocator
-import org.koin.core.component.KoinComponent
 import skywolf46.atmospherereentry.api.packetbridge.PacketBase
 import skywolf46.atmospherereentry.api.packetbridge.ReflectedSerializerBase
 import skywolf46.atmospherereentry.api.packetbridge.annotations.ReflectedSerializer

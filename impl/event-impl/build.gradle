@@ -7,3 +7,29 @@ dependencies {
 
     implementation(project(":event-api"))
 }
+
+publishing {
+    repositories {
+        maven {
+            name = "Snapshot"
+            allowInsecureProtocol(true)
+            if (rootProject.properties.get("snapshot").toString() == "true") {
+                url(rootProject.properties["reposilite.snapshot"] ?: "https://YOUR_REPOSIITE_URL/")
+            } else {
+                url(rootProject.properties["reposilite.release"] ?: "https://YOUR_REPOSIITE_URL/")
+            }
+            credentials {
+                username(rootProject.properties['reposilite.user'] as String ?: "YOUR_REPOSITORY_USERNAME")
+                password(rootProject.properties['reposilite.token'] as String ?: "YOUR_REPOSITORY_PASSWORD")
+            }
+        }
+    }
+    publications {
+        register("jar${project.name}", MavenPublication) {
+            groupId 'skywolf46'
+            artifactId "atmosphere-reentry-${project.name}"
+            version(rootProject.properties.get("snapshot").toString() == "true" ? "${rootProject.properties['version']}-SNAPSHOT" : rootProject.properties['version'] as String)
+            from components.java
+        }
+    }
+}

@@ -12,13 +12,15 @@ import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClient
 import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeHost
 import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerializer
 import skywolf46.atmospherereentry.api.packetbridge.annotations.ReflectedSerializer
+import skywolf46.atmospherereentry.api.packetbridge.data.DoubleHashedType
+import skywolf46.atmospherereentry.api.packetbridge.util.deserializeAs
 import skywolf46.atmospherereentry.api.packetbridge.util.readString
+import skywolf46.atmospherereentry.api.packetbridge.util.serializeTo
 import skywolf46.atmospherereentry.api.packetbridge.util.writeString
 import skywolf46.atmospherereentry.common.api.annotations.EntryPointContainer
 import skywolf46.atmospherereentry.common.api.annotations.EntryPointWorker
 import skywolf46.atmospherereentry.packetbridge.serializers.AutoReflectedSerializer
 import skywolf46.atmospherereentry.packetbridge.serializers.SerializerRegistryImpl
-import skywolf46.atmospherereentry.api.packetbridge.util.JWTUtil
 import skywolf46.atmospherereentry.packetbridge.util.log
 import skywolf46.atmospherereentry.packetbridge.util.logError
 import kotlin.reflect.KClass
@@ -50,7 +52,6 @@ class PacketBridgeEntryPoint : KoinComponent {
             factory<PacketBridgeClient> { PacketBridgeClientImpl(it[0], it[1], it[2], it[3]) }
             factory<PacketBridgeHost> { PacketBridgeServerImpl(it[0], it[1], it[2]) }
         })
-        JWTUtil.initializeKey()
     }
 
     private fun registerDefaultSerializers() {
@@ -127,37 +128,8 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readBoolean()
                 }
             })
-            registerSerializer(ByteArray::class.java, object : DataSerializerBase<ByteArray>() {
-                override fun serialize(buf: ByteBuf, dataBase: ByteArray) {
-                    buf.writeInt(dataBase.size)
-                    buf.writeBytes(dataBase)
-                }
-
-                override fun deserialize(buf: ByteBuf): ByteArray {
-                    val size = buf.readInt()
-                    val arr = ByteArray(size)
-                    buf.readBytes(arr)
-                    return arr
-                }
-            })
-            registerSerializer(IntArray::class.java, object : DataSerializerBase<IntArray>() {
-                override fun serialize(buf: ByteBuf, dataBase: IntArray) {
-                    buf.writeInt(dataBase.size)
-                    dataBase.forEach {
-                        buf.writeInt(it)
-                    }
-                }
-
-                override fun deserialize(buf: ByteBuf): IntArray {
-                    val size = buf.readInt()
-                    val arr = IntArray(size)
-                    repeat(size) {
-                        arr[it] = buf.readInt()
-                    }
-                    return arr
-                }
-            })
         }
+
     }
 
     private fun registerSerializers() {
@@ -166,6 +138,8 @@ class PacketBridgeEntryPoint : KoinComponent {
         log("..Scanning reflected serializers")
         val reflectedSerializer = scanReflectiveSerializer()
         log("..Serializer registration completed. ($definedSerializer defined, $reflectedSerializer reflected)")
+        log("..Initializing lazy serializers")
+        get<DataSerializerRegistry>().wakeLazySerializers()
     }
 
     private fun scanDefinedSerializers(): Int {
@@ -217,10 +191,12 @@ class PacketBridgeEntryPoint : KoinComponent {
                 val targetClass = it.loadClass()
                 get<DataSerializerRegistry>().registerSerializer(
                     targetClass,
-                    AutoReflectedSerializer(
-                        targetClass,
-                        targetClass.getAnnotation(ReflectedSerializer::class.java).type
-                    )
+                    lazy {
+                        AutoReflectedSerializer(
+                            targetClass,
+                            targetClass.getAnnotation(ReflectedSerializer::class.java).type
+                        )
+                    }
                 )
             }.onFailure { exception ->
                 logError("Failed to register serializer for ${it.name} : ${exception.message}")

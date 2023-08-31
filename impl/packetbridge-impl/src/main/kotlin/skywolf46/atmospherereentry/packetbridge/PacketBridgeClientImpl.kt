@@ -17,14 +17,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import skywolf46.atmospherereentry.api.packetbridge.*
+import skywolf46.atmospherereentry.api.packetbridge.PacketBase
+import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClient
+import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClientConnection
 import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import skywolf46.atmospherereentry.api.packetbridge.data.PacketWrapper
+import skywolf46.atmospherereentry.api.packetbridge.packets.client.PacketBroadcast
 import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.packetbridge.data.ReplyMetadata
 import skywolf46.atmospherereentry.packetbridge.handler.*
-import skywolf46.atmospherereentry.api.packetbridge.packets.WrappedPacket
 import skywolf46.atmospherereentry.packetbridge.packets.client.PacketRequestIdentify
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketRequireIdentify
 import skywolf46.atmospherereentry.packetbridge.util.TriggerableFuture
@@ -114,7 +116,7 @@ class PacketBridgeClientImpl(
         lock.write {
             replyHandle[id] = ReplyMetadata(action = listener as (PacketBase) -> Unit)
         }
-        send(WrappedPacket(id, packetBase))
+        send(PacketWrapper(packetBase, getIdentify(), id))
     }
 
     override suspend fun <T : PacketBase> waitReply(packetBase: PacketBase, limitation: KClass<T>): T {
@@ -138,8 +140,12 @@ class PacketBridgeClientImpl(
                 future.trigger(it as T)
             }
         }
-        send(WrappedPacket(id, packetBase))
+        send(PacketWrapper(packetBase, getIdentify(), id))
         return future
+    }
+
+    override fun broadcast(vararg packetBase: PacketBase) {
+        send(*packetBase.map { PacketBroadcast(it) }.toTypedArray())
     }
 
     override fun getInfo(): PacketBridgeClientConnection {

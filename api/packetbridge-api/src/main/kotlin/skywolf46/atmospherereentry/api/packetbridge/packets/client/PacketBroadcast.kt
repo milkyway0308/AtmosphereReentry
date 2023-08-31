@@ -1,4 +1,4 @@
-package skywolf46.atmospherereentry.api.packetbridge.packets
+package skywolf46.atmospherereentry.api.packetbridge.packets.client
 
 import io.netty.buffer.ByteBufAllocator
 import skywolf46.atmospherereentry.api.packetbridge.PacketBase
@@ -7,14 +7,13 @@ import skywolf46.atmospherereentry.api.packetbridge.annotations.ReflectedSeriali
 import skywolf46.atmospherereentry.api.packetbridge.util.deserializeAs
 import skywolf46.atmospherereentry.api.packetbridge.util.useByteBuf
 import skywolf46.atmospherereentry.api.packetbridge.util.writeString
-import java.util.*
 
 @ReflectedSerializer(ReflectedSerializerBase.ReflectType.MIXED_INJECTION)
-class PacketRedirect(private val uuid: UUID, private val packetId: Long) : PacketBase {
+class PacketBroadcast() : PacketBase {
     lateinit var packetContainer: ByteArray
         private set
 
-    constructor(uuid: UUID, packetId: Long, packetBase: PacketBase) : this(uuid, packetId) {
+    constructor(packetBase: PacketBase) : this() {
         ByteBufAllocator.DEFAULT.heapBuffer().apply {
             writeString(packetBase::class.java.name)
             packetContainer = ByteArray(readableBytes()).apply {
@@ -22,10 +21,6 @@ class PacketRedirect(private val uuid: UUID, private val packetId: Long) : Packe
             }
             release()
         }
-    }
-
-    constructor(uuid: UUID, packetId: Long, packet: ByteArray) : this(uuid, packetId) {
-        packetContainer = packet
     }
 
     fun asOriginalPacket(): PacketBase {

@@ -1,18 +1,16 @@
 package skywolf46.atmospherereentry.api.packetbridge.data
 
-import io.netty.buffer.ByteBuf
-import skywolf46.atmospherereentry.api.packetbridge.DataSerializerBase
 import skywolf46.atmospherereentry.api.packetbridge.annotations.CoreType
-import skywolf46.atmospherereentry.api.packetbridge.annotations.NetworkSerializer
 import skywolf46.atmospherereentry.api.packetbridge.util.HashUtil
-import java.util.*
 import kotlin.reflect.KClass
 
 @CoreType(Short.MIN_VALUE)
 class DoubleHashedType(val hash: Pair<Int, Int>) {
-    constructor(cls: Class<out Any>) : this(HashUtil.getDoubleHash(cls.name))
+    constructor(cls: Class<out Any>) : this(
+        if (cls.isArray && !cls.componentType().isPrimitive) "_Array" else cls.name
+    )
 
-    constructor(kls: KClass<out Any>) : this(HashUtil.getDoubleHash(kls.java.name))
+    constructor(kls: KClass<out Any>) : this(kls.java)
 
     constructor(string: String) : this(HashUtil.getDoubleHash(string))
 

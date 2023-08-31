@@ -10,9 +10,11 @@ import skywolf46.atmospherereentry.api.packetbridge.annotations.Exclude
 import skywolf46.atmospherereentry.api.packetbridge.data.DoubleHashedType
 import skywolf46.atmospherereentry.api.packetbridge.util.deserializeAs
 import skywolf46.atmospherereentry.api.packetbridge.util.serializeTo
+import java.lang.reflect.Array
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
+import java.util.*
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaConstructor
@@ -55,9 +57,9 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
                     throw IllegalArgumentException("Field injection requires empty constructor. (Class ${target.name})")
                 }
             } else {
-                if (target.getAnnotation(Metadata::class.java) == null) {
-                    throw IllegalArgumentException("Constructor / Mixed injection cannot be used in java based class. Use kotlin based class instead. (Class ${target.name})")
-                }
+//                if (target.getAnnotation(Metadata::class.java) == null) {
+//                    throw IllegalArgumentException("Constructor / Mixed injection cannot be used in java based class. Use kotlin based class instead. (Class ${target.name})")
+//                }
                 if (target.kotlin.primaryConstructor == null) {
                     throw IllegalArgumentException("Constructor / Mixed injection cannot be used in class without primary constructor. (Class ${target.name})")
                 }
@@ -159,6 +161,8 @@ class AutoReflectedSerializer<T : Any>(target: Class<T>, type: ReflectType) : Re
             // Dynamic constructor injection
             val parameters =
                 targetConstructor.kotlinFunction!!.parameters.map { map[DoubleHashedType(it.name!!)] }.toTypedArray()
+            println("Map: $map")
+            println("Parameters: ${parameters.map { if(it is Array) (it as kotlin.Array<out Any>).contentToString() else it.toString() }}")
             return targetConstructor.newInstance(*parameters) as T
         }
 

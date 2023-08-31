@@ -11,7 +11,7 @@ import skywolf46.atmospherereentry.common.Core
 import skywolf46.atmospherereentry.packetbridge.PacketBridgeClientImpl
 import skywolf46.atmospherereentry.packetbridge.PacketBridgeServerImpl
 import skywolf46.atmospherereentry.packetbridge.test.data.TestData
-import skywolf46.atmospherereentry.api.packetbridge.util.JWTUtil
+import skywolf46.atmospherereentry.api.packetbridge.util.JwtProvider
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
@@ -47,10 +47,14 @@ class PacketBridgeTest {
     @Test
     fun test3() {
         val port = 38922
-        val server = PacketBridgeServerImpl(port, false)
-        val client = PacketBridgeClientImpl("localhost", port, JWTUtil.createIdentifier("Hello World"))
+        val newJwtProvider = JwtProvider().apply {
+            this.initializeKey()
+        }
+        val server = PacketBridgeServerImpl(port, newJwtProvider)
+        val client = PacketBridgeClientImpl("localhost", port, newJwtProvider.createIdentifier("Hello World"))
         Thread.sleep(TimeUnit.SECONDS.toMillis(10))
     }
+
 
     @Test
     fun test4() {

@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import org.koin.mp.KoinPlatformTools
 import skywolf46.atmospherereentry.api.packetbridge.DataSerializerRegistry
+import skywolf46.atmospherereentry.api.packetbridge.data.DoubleHashedType
 
 private val EMPTY_ARRAY = byteArrayOf()
 
@@ -68,6 +69,15 @@ fun <T : Any> ByteBuf.deserializeAs(target: Class<*>): T {
         .acquireSerializer(target)
         .getOrElse {
             throw IllegalStateException("Cannot deserialize ${target.name} : No serializer found")
+        }.deserialize(this) as T
+}
+
+
+fun <T : Any> ByteBuf.deserializeAs(target: DoubleHashedType): T {
+    return KoinPlatformTools.defaultContext().get().get<DataSerializerRegistry>()
+        .acquireSerializer(target)
+        .getOrElse {
+            throw IllegalStateException("Cannot deserialize ${target} : No serializer found")
         }.deserialize(this) as T
 }
 

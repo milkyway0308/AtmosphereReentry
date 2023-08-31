@@ -30,6 +30,7 @@ suspend inline fun NetSyncEndPoint.withNetworkLock(
     unit: () -> Unit
 ) {
     lockNetwork(*updatable).apply {
+
         this.acquire()
         unit()
         this.release()

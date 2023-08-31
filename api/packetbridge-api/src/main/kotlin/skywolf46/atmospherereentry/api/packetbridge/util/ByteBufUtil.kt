@@ -25,3 +25,12 @@ fun <R : Any> ByteBuf.use(unit: (ByteBuf) -> R): R {
 fun <R : Any> useByteBuf(unit: (ByteBuf) -> R): R {
     return ByteBufAllocator.DEFAULT.heapBuffer().use(unit)
 }
+
+fun useAndReadByteBuf(unit: (ByteBuf) -> Unit) : ByteArray {
+    return useByteBuf {
+        unit(it)
+        ByteArray(it.readableBytes()).apply {
+            it.readBytes(this)
+        }
+    }
+}

@@ -16,6 +16,12 @@ import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeClientConnection
 import skywolf46.atmospherereentry.api.packetbridge.PacketBridgeHost
 import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import skywolf46.atmospherereentry.api.packetbridge.data.PacketWrapper
+import skywolf46.atmospherereentry.api.packetbridge.packets.client.PacketBroadcast
+import skywolf46.atmospherereentry.api.packetbridge.packets.server.PacketActionRejected
+import skywolf46.atmospherereentry.api.packetbridge.packets.server.PacketRelay
+import skywolf46.atmospherereentry.api.packetbridge.packets.server.event.PacketEventServerAuthRejected
+import skywolf46.atmospherereentry.api.packetbridge.packets.server.event.PacketEventServerIdentified
+import skywolf46.atmospherereentry.api.packetbridge.util.JwtProvider
 import skywolf46.atmospherereentry.common.api.UnregisterTrigger
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.packetbridge.handler.ErrorHandler
@@ -26,15 +32,15 @@ import skywolf46.atmospherereentry.packetbridge.packets.client.PacketRequestIden
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyComplete
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketIdentifyDenied
 import skywolf46.atmospherereentry.packetbridge.packets.server.PacketRequireIdentify
-import skywolf46.atmospherereentry.api.packetbridge.util.JWTUtil
 import skywolf46.atmospherereentry.packetbridge.util.log
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 class PacketBridgeServerImpl(
     private val port: Int,
-    private val skipVerification: Boolean,
+    private val jwtProvider: JwtProvider?,
     private val listenerType: ListenerType = ListenerType.Reflective.asServer(),
     val bossGroup: EventLoopGroup = NioEventLoopGroup(),
     val childGroup: EventLoopGroup = NioEventLoopGroup()
@@ -52,25 +58,47 @@ class PacketBridgeServerImpl(
 
     private fun init() {
         addWrappedListener(PacketRequestIdentify::class.java, 0) {
-            if (skipVerification) {
+            if (jwtProvider == null) {
                 lock.write {
-                    identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!
+                    identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!.apply {
+                        this.identifiedId = it.packet.authenticateKey
+                    }
                 }
                 println("Skipping verification. Using authentication key as name instead.")
                 it.reply(PacketIdentifyComplete(it.packet.authenticateKey))
+                trigger(PacketEventServerIdentified(it.packet.authenticateKey, handlers[it.from]!!))
             } else {
-                JWTUtil.checkIdentifier(it.packet.authenticateKey).onLeft { e ->
+                jwtProvider.checkIdentifier(it.packet.authenticateKey).onLeft { e ->
                     println("Client failed to identify: ${e.message} (UUID ${it.from})")
                     it.reply(PacketIdentifyDenied(e.message!!))
+                    trigger(PacketEventServerAuthRejected(handlers[it.from]!!))
                 }.onRight { key ->
                     lock.write {
-                        identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!
+                        identifiedHandlers[it.packet.authenticateKey] = handlers[it.from]!!.apply {
+                            this.identifiedId = key
+                        }
                     }
                     println("Client identified as $key (UUID ${it.from})")
                     it.reply(PacketIdentifyComplete(key))
+                    trigger(PacketEventServerIdentified(key, handlers[it.from]!!))
                 }
             }
         }
+
+        addWrappedListener(PacketBroadcast::class.java, 0) {
+            getProxy(it.from)?.apply {
+                if (!this.isIdentified()) {
+                    it.reply(PacketActionRejected("Client not identified yet."))
+                } else {
+                    lock.read {
+                        identifiedHandlers.filter { x -> x.key != this.identifiedId }.values
+                    }.forEach { proxy ->
+                        proxy.send(PacketWrapper(PacketRelay(it.packet.packetContainer), it.from))
+                    }
+                }
+            }
+        }
+
     }
 
     private fun start() {
@@ -102,15 +130,26 @@ class PacketBridgeServerImpl(
         bootStrap.bind(port).sync()
     }
 
+    override fun getProvider(): JwtProvider? {
+        return jwtProvider
+    }
+
     override fun broadcast(vararg packetBase: PacketBase) {
+        val remapped = packetBase.map { PacketWrapper(it, this.serverUUID, -1L) }.toTypedArray()
         identifiedHandlers.values.forEach {
-            it.send(*packetBase)
+            it.send(*remapped)
         }
     }
 
     override fun sendTo(target: PacketBridgeClientConnection, vararg packets: PacketBase) {
         for (x in packets) {
             target.send(x)
+        }
+    }
+
+    fun getProxy(uuid: UUID): PacketBridgeProxy? {
+        return lock.read {
+            handlers[uuid]
         }
     }
 

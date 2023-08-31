@@ -9,6 +9,8 @@ publishing {
                 url(rootProject.properties["reposilite.release"] ?: "https://YOUR_REPOSIITE_URL/")
             }
             credentials {
+                println "User: ${rootProject.properties['reposilite.user'] as String ?: "YOUR_REPOSITORY_USERNAME"}"
+                println "Token: ${rootProject.properties['reposilite.token'] as String ?: "YOUR_REPOSITORY_PASSWORD"}"
                 username(rootProject.properties['reposilite.user'] as String ?: "YOUR_REPOSITORY_USERNAME")
                 password(rootProject.properties['reposilite.token'] as String ?: "YOUR_REPOSITORY_PASSWORD")
             }
