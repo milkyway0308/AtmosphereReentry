@@ -74,7 +74,25 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readInt()
                 }
             })
+            registerSerializer(java.lang.Integer::class.java, object : DataSerializerBase<Int>() {
+                override fun serialize(buf: ByteBuf, dataBase: Int) {
+                    buf.writeInt(dataBase)
+                }
+
+                override fun deserialize(buf: ByteBuf): Int {
+                    return buf.readInt()
+                }
+            })
             registerSerializer(Long::class.java, object : DataSerializerBase<Long>() {
+                override fun serialize(buf: ByteBuf, dataBase: Long) {
+                    buf.writeLong(dataBase)
+                }
+
+                override fun deserialize(buf: ByteBuf): Long {
+                    return buf.readLong()
+                }
+            })
+            registerSerializer(java.lang.Long::class.java, object : DataSerializerBase<Long>() {
                 override fun serialize(buf: ByteBuf, dataBase: Long) {
                     buf.writeLong(dataBase)
                 }
@@ -92,7 +110,25 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readShort()
                 }
             })
+            registerSerializer(java.lang.Short::class.java, object : DataSerializerBase<Short>() {
+                override fun serialize(buf: ByteBuf, dataBase: Short) {
+                    buf.writeShort(dataBase.toInt())
+                }
+
+                override fun deserialize(buf: ByteBuf): Short {
+                    return buf.readShort()
+                }
+            })
             registerSerializer(Byte::class.java, object : DataSerializerBase<Byte>() {
+                override fun serialize(buf: ByteBuf, dataBase: Byte) {
+                    buf.writeByte(dataBase.toInt())
+                }
+
+                override fun deserialize(buf: ByteBuf): Byte {
+                    return buf.readByte()
+                }
+            })
+            registerSerializer(java.lang.Byte::class.java, object : DataSerializerBase<Byte>() {
                 override fun serialize(buf: ByteBuf, dataBase: Byte) {
                     buf.writeByte(dataBase.toInt())
                 }
@@ -110,6 +146,15 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readFloat()
                 }
             })
+            registerSerializer(java.lang.Float::class.java, object : DataSerializerBase<Float>() {
+                override fun serialize(buf: ByteBuf, dataBase: Float) {
+                    buf.writeFloat(dataBase)
+                }
+
+                override fun deserialize(buf: ByteBuf): Float {
+                    return buf.readFloat()
+                }
+            })
             registerSerializer(Double::class.java, object : DataSerializerBase<Double>() {
                 override fun serialize(buf: ByteBuf, dataBase: Double) {
                     buf.writeDouble(dataBase)
@@ -119,7 +164,25 @@ class PacketBridgeEntryPoint : KoinComponent {
                     return buf.readDouble()
                 }
             })
+            registerSerializer(java.lang.Double::class.java, object : DataSerializerBase<Double>() {
+                override fun serialize(buf: ByteBuf, dataBase: Double) {
+                    buf.writeDouble(dataBase)
+                }
+
+                override fun deserialize(buf: ByteBuf): Double {
+                    return buf.readDouble()
+                }
+            })
             registerSerializer(Boolean::class.java, object : DataSerializerBase<Boolean>() {
+                override fun serialize(buf: ByteBuf, dataBase: Boolean) {
+                    buf.writeBoolean(dataBase)
+                }
+
+                override fun deserialize(buf: ByteBuf): Boolean {
+                    return buf.readBoolean()
+                }
+            })
+            registerSerializer(java.lang.Boolean::class.java, object : DataSerializerBase<Boolean>() {
                 override fun serialize(buf: ByteBuf, dataBase: Boolean) {
                     buf.writeBoolean(dataBase)
                 }
