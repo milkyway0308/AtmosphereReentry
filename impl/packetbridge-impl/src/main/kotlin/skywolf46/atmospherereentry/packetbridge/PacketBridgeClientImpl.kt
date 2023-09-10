@@ -24,6 +24,8 @@ import skywolf46.atmospherereentry.api.packetbridge.data.ListenerType
 import skywolf46.atmospherereentry.api.packetbridge.data.PacketWrapper
 import skywolf46.atmospherereentry.api.packetbridge.packets.client.PacketBroadcast
 import skywolf46.atmospherereentry.common.api.UnregisterTrigger
+import skywolf46.atmospherereentry.common.api.util.printError
+import skywolf46.atmospherereentry.common.api.util.waitStackTrace
 import skywolf46.atmospherereentry.events.api.EventManager
 import skywolf46.atmospherereentry.packetbridge.data.ReplyMetadata
 import skywolf46.atmospherereentry.packetbridge.handler.*
@@ -113,7 +115,7 @@ class PacketBridgeClientImpl(
         listener: (T) -> Unit
     ) {
         val id = packetIdIncremental.incrementAndGet()
-        lock.write {
+       lock.write {
             replyHandle[id] = ReplyMetadata(action = listener as (PacketBase) -> Unit)
         }
         send(PacketWrapper(packetBase, getIdentify(), id))
@@ -181,14 +183,22 @@ class PacketBridgeClientImpl(
 
     override fun trigger(packetBase: PacketBase) {
         if (packetBase is PacketWrapper<*>) {
-            // Wave 1 - Trigger with wrapped packet
+             // Wave 1 - Check and trigger reply handle
+            runCatching {
+                lock.write {
+                    replyHandle.remove(packetBase.packetId)?.action
+                }?.invoke(packetBase.packet)
+            }.onFailure {
+                 it.waitStackTrace()
+            }
+            // Wave 2 - Trigger with wrapped packet
             eventManager.callEvent(packetBase.apply {
                 updateReplier { packetWrapper, packetToReply ->
                     // TODO - Add packet send verifier
                     send(PacketWrapper(packetToReply, getIdentify(), packetWrapper.packetId))
                 }
             }, packetBase.packet.javaClass.name)
-            // Wave 2 - Trigger original packet
+            // Wave 3 - Trigger original packet
             eventManager.callEvent(packetBase.packet)
         } else {
             eventManager.callEvent(packetBase)
